@@ -42,7 +42,4 @@ The LED lights up with a specific color depending on the day of the week (e.g., 
 
 ---
 
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
