@@ -5,7 +5,14 @@
 اتصال به Wi-Fi: در بخش اولیه‌ی کد، ماژول به شبکه Wi-Fi مشخص‌شده متصل می‌شود و پس از اتصال، آدرس IP ماژول روی نمایشگر OLED نمایش داده می‌شود.
 دریافت زمان از سرور NTP: پس از اتصال به اینترنت، زمان محلی از طریق سرورهای NTP (به صورت UTC+3:30 برای تهران) تنظیم می‌شود.
 نمایش ساعت و تاریخ: ساعت، دقیقه و ثانیه‌ها به شکلی خوانا و زیبا در مرکز نمایشگر نمایش داده می‌شوند. همچنین تاریخ روز نیز در پایین صفحه قرار گرفته است.
-تغییر رنگ LED بر اساس روز هفته: بر اساس روز هفته، LED رنگ خاصی به خود می‌گیرد (مثلاً قرمز برای یکشنبه، سبز برای دوشنبه، و غیره)، که این امر می‌تواند در محیط‌های کم‌نور کاربردی باشد.
+تغییر رنگ LED بر اساس روز هفته: بر اساس روز هفته، LED رنگ خاصی به خود می‌گیرد (مثلاً قرمز برای یکشنبه، سبز برای دوشنبه، و غیره)، که این امر می‌تواند در محیط‌های کم‌نور کاربردی باشد..
+.
+.
+.
+.
+.
+.
+.
 English Code Explanation:
 This code is designed to connect an ESP8266 module to a Wi-Fi network and obtain the current time from an NTP (Network Time Protocol) server. The received date and time are displayed on an OLED screen in an elegant format, while an attached WS2812 LED lights up with a specific color for each day of the week.
 
