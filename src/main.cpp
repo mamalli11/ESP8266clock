@@ -1,3 +1,4 @@
+
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
@@ -10,20 +11,11 @@
 #include <Adafruit_NeoPixel.h>
 #include <FS.h>
 #include <LittleFS.h>
-#include <HTTPClient.h>
 #include <DHT.h>
+#include <ESP8266HTTPClient.h>
 
 #define OLED_RESET LED_BUILTIN
 Adafruit_SSD1306 display(OLED_RESET);
-ESP8266WebServer server(80);
-
-// WiFi Credentials
-const char *ssid = "Your_SSID";
-const char *password = "Your_PASSWORD";
-
-// NTP Config
-int timezone = 3 * 3600 + 30 * 60; // Tehran time zone
-int dst = 0;
 
 // Pin Definitions
 #define LED_PIN D5
@@ -33,216 +25,186 @@ int dst = 0;
 Adafruit_NeoPixel pixel(1, LED_PIN, NEO_GRB + NEO_KHZ800);
 DHT dht(DHT_PIN, DHT11);
 
-// متغیرها و تنظیمات
-bool nightMode = false;
-bool isPersian = true;
-int brightness = 255;
-int alarmHour = -1;
-int alarmMinute = -1;
-bool alarmActive = false;
-int timerSeconds = -1;
+// WiFi Credentials
+const char *ssid = "Your_SSID";
+const char *password = "Your_PASSWORD";
 
-// تابع ذخیره تنظیمات
-void saveSettings()
+// NTP Config
+int timezone = 3 * 3600 + 30 * 60; // Tehran time zone
+int dst = 0;
+
+// Web Server
+ESP8266WebServer server(80);
+
+// Configuration
+struct Config
 {
-  EEPROM.begin(512);
-  EEPROM.write(0, nightMode);
-  EEPROM.write(1, isPersian);
-  EEPROM.write(2, brightness);
-  EEPROM.write(3, alarmHour);
-  EEPROM.write(4, alarmMinute);
-  EEPROM.write(5, alarmActive);
-  EEPROM.commit();
-  EEPROM.end();
+  String city;
+  bool autoBrightness;
+  float brightness;
+  String alarms[5]; // Max 5 alarms
+};
+Config config;
+
+// Weather Info
+String weatherInfo;
+
+// Utility Functions
+void saveConfig()
+{
+  File file = LittleFS.open("/config.json", "w");
+  if (!file)
+  {
+    Serial.println("Failed to open config file for writing.");
+    return;
+  }
+  StaticJsonDocument<512> doc;
+  doc["city"] = config.city;
+  doc["autoBrightness"] = config.autoBrightness;
+  doc["brightness"] = config.brightness;
+  for (int i = 0; i < 5; i++)
+  {
+    doc["alarms"][i] = config.alarms[i];
+  }
+  serializeJson(doc, file);
+  file.close();
 }
 
-// تابع بازیابی تنظیمات
-void loadSettings()
+void loadConfig()
 {
-  EEPROM.begin(512);
-  nightMode = EEPROM.read(0);
-  isPersian = EEPROM.read(1);
-  brightness = EEPROM.read(2);
-  alarmHour = EEPROM.read(3);
-  alarmMinute = EEPROM.read(4);
-  alarmActive = EEPROM.read(5);
-  EEPROM.end();
+  File file = LittleFS.open("/config.json", "r");
+  if (!file)
+  {
+    Serial.println("No config file found, using defaults.");
+    return;
+  }
+  StaticJsonDocument<512> doc;
+  DeserializationError error = deserializeJson(doc, file);
+  if (error)
+  {
+    Serial.println("Failed to read config file, using defaults.");
+    return;
+  }
+  config.city = doc["city"].as<String>();
+  config.autoBrightness = doc["autoBrightness"];
+  config.brightness = doc["brightness"];
+  for (int i = 0; i < 5; i++)
+  {
+    config.alarms[i] = doc["alarms"][i].as<String>();
+  }
+  file.close();
 }
 
-// تنظیم روشنایی نمایشگر
 void adjustBrightness()
 {
-  display.ssd1306_command(SSD1306_SETCONTRAST);
-  display.ssd1306_command(nightMode ? 50 : brightness);
+  if (config.autoBrightness)
+  {
+    int lightLevel = analogRead(LIGHT_SENSOR_PIN);
+    float brightness = map(lightLevel, 0, 1023, 0, 255) / 255.0;
+    analogWrite(OLED_RESET, brightness * 255);
+  }
+  else
+  {
+    analogWrite(OLED_RESET, config.brightness * 255);
+  }
 }
 
-// مدیریت صفحه وب
+void fetchWeather()
+{
+  if (WiFi.status() == WL_CONNECTED && config.city.length() > 0)
+  {
+    HTTPClient http;
+    WiFiClient client;
+    String apiUrl = "http://api.openweathermap.org/data/2.5/weather?q=" + config.city + "&appid=Your_API_Key&units=metric";
+    http.begin(client, apiUrl);
+    int httpCode = http.GET();
+    if (httpCode == 200)
+    {
+      weatherInfo = http.getString();
+    }
+    http.end();
+  }
+}
+
+void checkAlarms(struct tm *p_tm)
+{
+  String currentTime = String(p_tm->tm_hour) + ":" + String(p_tm->tm_min);
+  for (String alarm : config.alarms)
+  {
+    if (alarm == currentTime)
+    {
+      pixel.fill(pixel.Color(255, 0, 0));
+      pixel.show();
+      delay(1000);
+    }
+  }
+}
+
 void handleRoot()
 {
-  String html = R"rawliteral(
-    <html>
-    <head>
-      <title>تنظیمات</title>
-    </head>
-    <body>
-      <h1>تنظیمات دستگاه</h1>
-      <form action="/setSettings" method="POST">
-        <label for="language">زبان:</label>
-        <select id="language" name="language">
-          <option value="0">انگلیسی</option>
-          <option value="1">فارسی</option>
-        </select><br>
-        <label for="brightness">روشنایی:</label>
-        <input type="range" id="brightness" name="brightness" min="50" max="255"><br>
-        <input type="submit" value="ذخیره">
-      </form>
-    </body>
-    </html>
-  )rawliteral";
+  String html = "<html><body>";
+  html += "<h1>ESP8266 Clock Settings</h1>";
+  html += "<form action='/save' method='POST'>";
+  html += "City: <input type='text' name='city' value='" + config.city + "'><br>";
+  html += "Auto Brightness: <input type='checkbox' name='autoBrightness' " + String(config.autoBrightness ? "checked" : "") + "><br>";
+  html += "Brightness: <input type='range' name='brightness' min='0' max='1' step='0.1' value='" + String(config.brightness) + "'><br>";
+  for (int i = 0; i < 5; i++)
+  {
+    html += "Alarm " + String(i + 1) + ": <input type='time' name='alarm" + String(i) + "' value='" + config.alarms[i] + "'><br>";
+  }
+  html += "<input type='submit' value='Save'>";
+  html += "</form>";
+  html += "</body></html>";
   server.send(200, "text/html", html);
 }
 
-// ذخیره تنظیمات از صفحه وب
-void handleSetSettings()
+void handleSave()
 {
-  if (server.hasArg("language"))
+  config.city = server.arg("city");
+  config.autoBrightness = server.hasArg("autoBrightness");
+  config.brightness = server.arg("brightness").toFloat();
+  for (int i = 0; i < 5; i++)
   {
-    isPersian = server.arg("language").toInt();
+    config.alarms[i] = server.arg("alarm" + String(i));
   }
-  if (server.hasArg("brightness"))
-  {
-    brightness = server.arg("brightness").toInt();
-  }
-  saveSettings();
-  server.send(200, "text/html", "تنظیمات ذخیره شد. دستگاه را مجددا راه‌اندازی کنید.");
-}
-
-// خواندن سنسور نور
-int readLightSensor()
-{
-  // کدی برای خواندن نور از سنسور
-  return analogRead(A0); // مثال، فرض بر اینکه سنسور به A0 متصل است
-}
-
-// مدیریت آلارم
-void checkAlarm(struct tm *p_tm)
-{
-  if (alarmActive && p_tm->tm_hour == alarmHour && p_tm->tm_min == alarmMinute)
-  {
-    // اجرای کد برای هشدار
-    Serial.println("Alarm!");
-    alarmActive = false; // غیرفعال کردن آلارم
-    saveSettings();
-  }
-}
-
-// دریافت اطلاعات آب‌وهوا
-void fetchWeather()
-{
-  WiFiClient client;
-  HTTPClient http;
-  http.begin(client, "http://api.weatherapi.com/v1/current.json?key=API_KEY&q=Tehran&lang=fa");
-  int httpCode = http.GET();
-  if (httpCode == 200)
-  {
-    String payload = http.getString();
-    DynamicJsonDocument doc(1024);
-    deserializeJson(doc, payload);
-    String weather = doc["current"]["condition"]["text"];
-    float temp = doc["current"]["temp_c"];
-    Serial.printf("Weather: %s, Temp: %.1f°C\n", weather.c_str(), temp);
-  }
-  http.end();
-}
-
-// تابع برای اسلاید کردن متن از راست به چپ
-void displayTimeWithSlide(struct tm *p_tm)
-{
-  for (int x = 128; x >= 0; x -= 4)
-  { // انیمیشن اسلاید از راست به چپ
-    display.clearDisplay();
-
-    // نمایش ساعت
-    display.setTextSize(3);
-    display.setTextColor(WHITE);
-    display.setCursor(x, 0);
-    if (p_tm->tm_hour < 10)
-      display.print("0");
-    display.print(p_tm->tm_hour);
-    display.print(":");
-    if (p_tm->tm_min < 10)
-      display.print("0");
-    display.print(p_tm->tm_min);
-
-    // نمایش تاریخ
-    display.setTextSize(2);
-    display.setCursor(x, 25);
-    display.print(p_tm->tm_mday);
-    display.print("/");
-    display.print(p_tm->tm_mon + 1);
-    display.print("/");
-    display.print(p_tm->tm_year + 1900);
-
-    display.display();
-    delay(50); // کنترل سرعت انیمیشن
-  }
-}
-
-// تابع برای انیمیشن فید (روشن و خاموش شدن تدریجی)
-void displayTimeWithFade(struct tm *p_tm)
-{
-  for (int brightness = 0; brightness <= 255; brightness += 15)
-  { // فید ورودی
-    display.clearDisplay();
-    display.setTextSize(3);
-    display.setTextColor(WHITE);
-    display.setCursor(20, 0);
-    if (p_tm->tm_hour < 10)
-      display.print("0");
-    display.print(p_tm->tm_hour);
-    display.print(":");
-    if (p_tm->tm_min < 10)
-      display.print("0");
-    display.print(p_tm->tm_min);
-    display.display();
-
-    analogWrite(OLED_RESET, brightness); // تغییر روشنایی
-    delay(50);
-  }
-
-  delay(1000); // مکث برای نمایش ساعت
-
-  for (int brightness = 255; brightness >= 0; brightness -= 15)
-  { // فید خروجی
-    analogWrite(OLED_RESET, brightness);
-    delay(50);
-  }
+  saveConfig();
+  server.send(200, "text/plain", "Settings saved. Rebooting...");
+  ESP.restart();
 }
 
 void setup()
 {
   Serial.begin(115200);
-  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
-  display.clearDisplay();
-  display.display();
+
+  if (!LittleFS.begin())
+  {
+    Serial.println("LittleFS mount failed.");
+    return;
+  }
+
+  loadConfig();
 
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED)
   {
     delay(500);
+    Serial.print(".");
   }
+  Serial.println("Connected to WiFi");
 
   configTime(timezone, dst, "pool.ntp.org", "time.nist.gov");
-  while (!time(nullptr))
-  {
-    delay(1000);
-  }
 
   server.on("/", handleRoot);
-  server.on("/setSettings", HTTP_POST, handleSetSettings);
+  server.on("/save", HTTP_POST, handleSave);
   server.begin();
 
-  loadSettings();
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+  display.clearDisplay();
+
+  dht.begin();
+  pixel.begin();
+
+  fetchWeather();
 }
 
 void loop()
@@ -252,13 +214,27 @@ void loop()
   time_t now = time(nullptr);
   struct tm *p_tm = localtime(&now);
 
-  checkAlarm(p_tm);
+  checkAlarms(p_tm);
   adjustBrightness();
 
-  if (millis() % 60000 == 0)
-  { // هر دقیقه آب‌وهوا را به‌روزرسانی کن
+  if (millis() % 6000000 == 0)
+  {
     fetchWeather();
   }
+
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setCursor(0, 0);
+  display.printf("%02d:%02d:%02d", p_tm->tm_hour, p_tm->tm_min, p_tm->tm_sec);
+
+  display.setTextSize(1);
+  display.setCursor(0, 20);
+  display.printf("%d/%d/%d", p_tm->tm_mday, p_tm->tm_mon + 1, p_tm->tm_year + 1900);
+
+  display.setCursor(0, 30);
+  display.print(weatherInfo);
+
+  display.display();
 
   delay(1000);
 }
