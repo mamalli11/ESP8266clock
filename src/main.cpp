@@ -8,6 +8,7 @@
 #include <Adafruit_NeoPixel.h>
 #include <ArduinoJson.h>
 #include <ESP8266HTTPClient.h>
+#include <WiFiClientSecure.h>
 
 // تنظیمات نمایشگر SSD1315
 U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/U8X8_PIN_NONE);
@@ -61,18 +62,11 @@ float weather_humidity;
 unsigned long lastWeatherUpdate = 0;
 unsigned long lastFetchTime = 0;
 
-struct PrayerTimes
-{
-  char azan_sobh[6];
-  char tolu_aftab[6];
-  char azan_zohr[6];
-  char ghorub_aftab[6];
-  char azan_maghreb[6];
-  char nimeshab[6];
-};
+// API URL
+const String apiUrl = "https://prayer.aviny.com/api/prayertimes/311";
 
-// متغیر برای ذخیره اوقات شرعی
-PrayerTimes prayerTimes;
+// متغیرهای اوقات شرعی
+String CityLName, imsaakTime, sunriseTime, noonTime, sunsetTime, maghrebTime, midnightTime, todayDate, todayQamari, simultaneityKaaba;
 
 // تنظیمات آلارم و تایمر
 struct Alarm
@@ -212,7 +206,7 @@ void connectToWiFi()
   {
     u8g2.clearBuffer();
     u8g2.drawStr(5, 10, "WiFi Connected!");
-    String ip = "IP: " + WiFi.localIP().toString();
+    String ip = "IP : " + WiFi.localIP().toString();
     u8g2.drawStr(5, 30, ip.c_str());
     u8g2.sendBuffer();
     delay(1000);
@@ -408,95 +402,183 @@ void updateLED(int dayOfWeek, float dimFactor = 0.1)
   pixel.show();
 }
 
+// متغیرهای حالت
+bool showShamsiDate = true;                // برای تعیین اینکه تاریخ شمسی یا میلادی نمایش داده شود
+unsigned long lastSwitchTime = 0;          // زمان آخرین تغییر نمایش
+const unsigned long switchInterval = 7500; // بازه تغییر به میلی‌ثانیه (7.5 ثانیه)
+
 // تابع به‌روزرسانی نمایشگر
 void updateDisplay(struct tm *p_tm)
 {
   u8g2.clearBuffer();
 
-  char timeStr[6];
-  snprintf(timeStr, sizeof(timeStr), is_24_hour_format ? "%02d:%02d" : "%02d:%02d %s",
-           is_24_hour_format ? p_tm->tm_hour : (p_tm->tm_hour % 12), p_tm->tm_min, p_tm->tm_hour >= 12 ? "PM" : "AM");
+  // نمایش زمان (همراه با ثانیه)
+  // نمایش ساعت
+  char hourStr[3];
+  snprintf(hourStr, sizeof(hourStr), "%02d",
+           is_24_hour_format ? p_tm->tm_hour : (p_tm->tm_hour % 12 == 0 ? 12 : p_tm->tm_hour % 12));
+  u8g2.setFont(u8g2_font_logisoso20_tr); // فونت دلخواه برای ساعت
+  u8g2.drawStr(15, 40, hourStr);
 
-  u8g2.setFont(u8g2_font_logisoso30_tr);
-  u8g2.drawStr(20, 40, timeStr);
+  // نمایش جداکننده ":" بین ساعت و دقیقه
 
-  char dateStr[11];
-  snprintf(dateStr, sizeof(dateStr), "%04d/%02d/%02d", p_tm->tm_year + 1900, p_tm->tm_mon + 1, p_tm->tm_mday);
-  u8g2.setFont(u8g2_font_6x12_tr);
-  u8g2.drawStr(35, 60, dateStr);
+  u8g2.setFont(u8g2_font_logisoso30_tr); // فونت دلخواه برای جداکننده
+  u8g2.drawStr(45, 40, ":");
 
-  u8g2.sendBuffer();
-}
+  // نمایش دقیقه
+  char minuteStr[3];
+  snprintf(minuteStr, sizeof(minuteStr), "%02d", p_tm->tm_min);
+  u8g2.setFont(u8g2_font_logisoso20_tr); // فونت دلخواه برای دقیقه
+  u8g2.drawStr(55, 40, minuteStr);
 
-void fetchPrayerTimes()
-{
-  if (WiFi.status() == WL_CONNECTED)
+  // نمایش جداکننده ":" بین دقیقه و ثانیه
+  u8g2.setFont(u8g2_font_6x10_tr); // فونت دلخواه برای جداکننده
+  u8g2.drawStr(85, 35, ":");
+
+  // نمایش AM/PM در صورت فعال بودن حالت 12 ساعته
+  if (!is_24_hour_format)
   {
+    // نمایش ثانیه
+    char secondStr[3];
+    snprintf(secondStr, sizeof(secondStr), "%02d", p_tm->tm_sec);
+    u8g2.setFont(u8g2_font_6x10_tr); // فونت دلخواه برای ثانیه
+    u8g2.drawStr(92, 30, secondStr);
 
-    HTTPClient http;
-    WiFiClient client;                                                                                       // Create a WiFiClient object
-    String api_url = "https://api.keybit.ir/owghat/?city=%D8%AE%D9%85%DB%8C%D9%86%DB%8C+%D8%B4%D9%87%D8%B1"; // URL کدگذاری‌شده
+    char amPmStr[3];
+    snprintf(amPmStr, sizeof(amPmStr), "%s", p_tm->tm_hour >= 12 ? "pm" : "am");
+    u8g2.setFont(u8g2_font_6x10_tr); // فونت دلخواه برای AM/PM
+    u8g2.drawStr(92, 40, amPmStr);   // تنظیم مکان دلخواه برای AM/PM
+  }
+  else
+  {
+    // نمایش ثانیه
+    char secondStr[3];
+    snprintf(secondStr, sizeof(secondStr), "%02d", p_tm->tm_sec);
+    u8g2.setFont(u8g2_font_6x13_tr); // فونت دلخواه برای ثانیه
+    u8g2.drawStr(92, 35, secondStr);
+  }
 
-    Serial.println("Connecting to API...");
-    http.begin(client, api_url);
-    int httpCode = http.GET(); // ارسال درخواست GET
+  // مدیریت تغییر بین تاریخ شمسی و میلادی
+  unsigned long currentMillis = millis();
+  if (currentMillis - lastSwitchTime > switchInterval)
+  {
+    showShamsiDate = !showShamsiDate;
+    lastSwitchTime = currentMillis;
+  }
 
-    Serial.println(http.errorToString(1));
-    if (httpCode == 200)
+  // نمایش تاریخ
+  char dateStr[20];
+  if (showShamsiDate)
+  {
+    // نمایش تاریخ شمسی
+    if (todayDate.isEmpty())
     {
-      String payload = http.getString();
-      Serial.println("API Response: " + payload);
-
-      // تجزیه JSON
-      StaticJsonDocument<512> doc;
-      DeserializationError error = deserializeJson(doc, payload);
-      if (error)
-      {
-        Serial.print("JSON Parsing Error: ");
-        Serial.println(error.c_str());
-        return;
-      }
-
-      // ذخیره مقادیر در متغیرهای ساختار
-      strcpy(prayerTimes.azan_sobh, doc["result"]["azan_sobh"] | "N/A");
-      strcpy(prayerTimes.tolu_aftab, doc["result"]["tolu_aftab"] | "N/A");
-      strcpy(prayerTimes.azan_zohr, doc["result"]["azan_zohr"] | "N/A");
-      strcpy(prayerTimes.ghorub_aftab, doc["result"]["ghorub_aftab"] | "N/A");
-      strcpy(prayerTimes.azan_maghreb, doc["result"]["azan_maghreb"] | "N/A");
-      strcpy(prayerTimes.nimeshab, doc["result"]["nimeshab"] | "N/A");
-
-      Serial.println("Prayer times updated successfully!");
+      snprintf(dateStr, sizeof(dateStr), "1111/22/33"); // مقدار پیش‌فرض در صورت خالی بودن
     }
     else
     {
-      Serial.printf("Failed to fetch prayer times, HTTP code: %d\n", httpCode);
+      snprintf(dateStr, sizeof(dateStr), "%s", todayDate.c_str());
     }
-
-    http.end(); // پایان درخواست HTTP
   }
+  else
+  {
+    // نمایش تاریخ میلادی
+    snprintf(dateStr, sizeof(dateStr), "%04d/%02d/%02d", p_tm->tm_year + 1900, p_tm->tm_mon + 1, p_tm->tm_mday);
+  }
+
+  u8g2.setFont(u8g2_font_6x13_tr);
+  u8g2.drawStr(35, 60, dateStr);
+
+  // ارسال به نمایشگر
+  u8g2.sendBuffer();
+}
+
+// تابع دریافت داده‌های اوقات شرعی
+bool fetchPrayerTimes()
+{
+  if (WiFi.status() == WL_CONNECTED)
+  {
+    WiFiClientSecure client;
+    client.setInsecure(); // غیرفعال کردن بررسی SSL
+
+    HTTPClient http;
+    http.begin(client, apiUrl);
+
+    int httpResponseCode = http.GET();
+
+    if (httpResponseCode == 200)
+    {
+      String payload = http.getString();
+      Serial.println("API Response:");
+      Serial.println(payload);
+
+      // استخراج داده‌های JSON
+      DynamicJsonDocument doc(1024);
+      DeserializationError error = deserializeJson(doc, payload);
+      if (!error)
+      {
+        imsaakTime = doc["Imsaak"].as<String>().substring(0, 5);
+        sunriseTime = doc["Sunrise"].as<String>().substring(0, 5);
+        noonTime = doc["Noon"].as<String>().substring(0, 5);
+        sunsetTime = doc["Sunset"].as<String>().substring(0, 5);
+        maghrebTime = doc["Maghreb"].as<String>().substring(0, 5);
+        midnightTime = doc["Midnight"].as<String>().substring(0, 5);
+        todayDate = doc["Today"].as<String>().substring(0, 8);
+        todayQamari = doc["TodayQamari"].as<String>();
+        CityLName = doc["CityLName"].as<String>();
+        return true;
+      }
+      else
+      {
+        Serial.println("Error parsing JSON!");
+      }
+    }
+    else
+    {
+      Serial.print("Error connecting to API: ");
+      Serial.println(httpResponseCode);
+    }
+    http.end();
+  }
+  else
+  {
+    Serial.println("WiFi not connected!");
+  }
+  return false;
 }
 
 void displayPrayerTimes()
 {
+  static unsigned long previousMillis = 0; // زمان آخرین تغییر صفحه
+  static bool showFirstPage = true;        // وضعیت نمایش صفحه
+  unsigned long currentMillis = millis();  // زمان فعلی
+
+  // تغییر صفحه هر ۲.۵ ثانیه
+  if (currentMillis - previousMillis >= 3500)
+  {
+    previousMillis = currentMillis; // به‌روزرسانی زمان
+    showFirstPage = !showFirstPage; // تغییر وضعیت صفحه
+  }
+
   u8g2.clearBuffer();
+  u8g2.setFont(u8g2_font_6x12_tr); // تنظیم فونت متن
 
-  u8g2.setCursor(5, 0);
-  u8g2.println("Prayer Times:");
-
-  u8g2.setCursor(5, 10);
-  u8g2.printf("Sobh: %s\n", prayerTimes.azan_sobh);
-
-  u8g2.setCursor(5, 20);
-  u8g2.printf("Tolu: %s\n", prayerTimes.tolu_aftab);
-
-  u8g2.setCursor(5, 30);
-  u8g2.printf("Zohr: %s\n", prayerTimes.azan_zohr);
-
-  u8g2.setCursor(5, 40);
-  u8g2.printf("Maghrib: %s\n", prayerTimes.azan_maghreb);
-
-  u8g2.setCursor(5, 50);
-  u8g2.printf("Midnight: %s\n", prayerTimes.nimeshab);
+  if (showFirstPage)
+  {
+    // صفحه دوم = اوقات عصر و تاریخ
+    u8g2.drawStr(5, 10, ("Maghreb = " + maghrebTime).c_str());
+    u8g2.drawStr(5, 25, ("Nimeh shab = " + midnightTime).c_str());
+    u8g2.drawStr(5, 40, ("Qamari = " + todayQamari).c_str());
+    u8g2.drawStr(5, 60, ("City : " + CityLName).c_str());
+  }
+  else
+  {
+    // صفحه اول: اوقات صبح و ظهر
+    u8g2.drawStr(5, 10, ("Sobh = " + imsaakTime).c_str());
+    u8g2.drawStr(5, 25, ("Toloe = " + sunriseTime).c_str());
+    u8g2.drawStr(5, 40, ("Zohr = " + noonTime).c_str());
+    u8g2.drawStr(5, 55, ("ghrob = " + sunsetTime).c_str());
+  }
 
   u8g2.sendBuffer();
 }
@@ -536,7 +618,7 @@ unsigned long lastStateChange = 0;        // زمان آخرین تغییر حا
 
 const unsigned long TIME_DISPLAY_DURATION = 15000;   // مدت نمایش ساعت (15 ثانیه)
 const unsigned long WEATHER_DISPLAY_DURATION = 5000; // مدت نمایش آب و هوا (5 ثانیه)
-const unsigned long PRAYER_DISPLAY_DURATION = 5000;  // مدت نمایش اوقات شرعی (5 ثانیه)
+const unsigned long PRAYER_DISPLAY_DURATION = 7000;  // مدت نمایش اوقات شرعی (5 ثانیه)
 
 void loop()
 {
