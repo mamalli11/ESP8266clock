@@ -38,8 +38,8 @@ ESP8266WebServer server(80);
 void startHotspot();
 
 // تنظیمات شبکه
-const char *my_default_ssid = "TP-Mjm";
-const char *my_default_password = "MJMoe99_$@M87";
+const char *my_default_ssid = "Wifi_SSD";
+const char *my_default_password = "Wifi_Password";
 
 String wifi_ssid;
 String wifi_password;
@@ -68,7 +68,7 @@ const String apiUrl = "https://prayer.aviny.com/api/prayertimes/311";
 // متغیرهای اوقات شرعی
 String CityLName, imsaakTime, sunriseTime, noonTime, sunsetTime, maghrebTime, midnightTime, todayDate, todayQamari, simultaneityKaaba;
 
-// تنظیمات آلارم و تایمر
+// Alarm Configuration
 struct Alarm
 {
   int hour;
@@ -76,6 +76,21 @@ struct Alarm
   bool active;
 };
 Alarm alarms[3];
+
+// Load/Save Alarms
+void saveAlarms()
+{
+  EEPROM.begin(512);
+  EEPROM.put(0, alarms);
+  EEPROM.commit();
+}
+
+void loadAlarms()
+{
+  EEPROM.begin(512);
+  EEPROM.get(0, alarms);
+}
+
 unsigned long timer_duration = 0;
 unsigned long timer_start_time = 0;
 
@@ -352,22 +367,61 @@ void handleSaveConfig()
   ESP.restart();
 }
 
-// تابع نمایش آلارم
+// Serve Index.html
+void serveIndex()
+{
+  if (SPIFFS.exists("/index.html"))
+  {
+    File file = SPIFFS.open("/index.html", "r");
+    server.streamFile(file, "text/html");
+    file.close();
+  }
+  else
+  {
+    server.send(404, "text/plain", "File not found");
+  }
+}
+
+// Handle Alarm Setup via Web
+void handleSetAlarm()
+{
+  if (server.hasArg("alarm") && server.hasArg("hour") && server.hasArg("minute"))
+  {
+    int alarmIdx = server.arg("alarm").toInt();
+    if (alarmIdx >= 0 && alarmIdx < 3)
+    {
+      alarms[alarmIdx].hour = server.arg("hour").toInt();
+      alarms[alarmIdx].minute = server.arg("minute").toInt();
+      alarms[alarmIdx].active = true;
+      saveAlarms();
+      server.send(200, "text/plain", "Alarm set successfully!");
+    }
+    else
+    {
+      server.send(400, "text/plain", "Invalid alarm index");
+    }
+  }
+  else
+  {
+    server.send(400, "text/plain", "Missing parameters");
+  }
+}
+
+// Check and Trigger Alarms
 void checkAlarms()
 {
   time_t now = time(nullptr);
-  struct tm *p_tm = localtime(&now);
+  struct tm *timeInfo = localtime(&now);
   for (int i = 0; i < 3; i++)
   {
-    if (alarms[i].active && alarms[i].hour == p_tm->tm_hour && alarms[i].minute == p_tm->tm_min)
+    if (alarms[i].active &&
+        alarms[i].hour == timeInfo->tm_hour &&
+        alarms[i].minute == timeInfo->tm_min)
     {
-      for (int j = 0; j < 60; j++)
-      {
-        digitalWrite(BUZZER_PIN, HIGH);
-        delay(500);
-        digitalWrite(BUZZER_PIN, LOW);
-        delay(500);
-      }
+      // Trigger alarm
+      digitalWrite(D7, HIGH); // Buzzer ON
+      delay(1000);
+      digitalWrite(D7, LOW); // Buzzer OFF
     }
   }
 }
@@ -595,10 +649,19 @@ void setup()
   connectToWiFi();
   updateTime();
 
+  // Initialize File System
+  if (!SPIFFS.begin())
+  {
+    Serial.println("Failed to mount SPIFFS");
+    return;
+  }
+
   server.on("/", handleWebConfig);
   server.on("/save", handleSaveConfig);
+  server.on("/setAlarm", HTTP_POST, handleSetAlarm);
   server.begin();
 
+  loadAlarms();
   fetchWeather();     // دریافت اولین اطلاعات آب‌وهوا
   fetchPrayerTimes(); // دریافت اولین اطلاعات اوقات شرعی
 }
@@ -655,6 +718,7 @@ void loop()
       lastStateChange = currentMillis;
     }
     break;
+    checkAlarms();
   }
 
   // تنظیم LED بر اساس روز هفته شمسی
