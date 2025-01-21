@@ -51,7 +51,7 @@ int timezone_offset = 3 * 3600 + 30 * 60;
 bool is_24_hour_format = true;
 
 // تنظیمات API آب‌وهوا
-const char *weather_api_key = "a287e26533d2ceee3e022d769575453e"; // کلید API خود را اینجا قرار دهید
+const char *weather_api_key = "API_KEY"; // کلید API خود را اینجا قرار دهید
 String weather_city = "Esfahan";
 String weather_country = "IR";
 String weather_description;
@@ -541,9 +541,9 @@ void updateDisplay(struct tm *p_tm)
   }
 
   u8g2.setFont(u8g2_font_6x13_tr);
-  u8g2.drawStr(35, 60, dateStr);
+  u8g2.drawStr(30, 60, dateStr);
 
-  // ارسال به نمایشگر
+  // ارسال به نمایشگر-
   u8g2.sendBuffer();
 }
 
