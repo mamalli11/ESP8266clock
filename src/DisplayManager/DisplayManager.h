@@ -13,6 +13,7 @@ public:
     void showWeatherPage(const String &description, float temp, float humidity);
     void showPrayerTimesPage(const String times[6]);
     void adjustBrightness(int sensorValue);
+    void drawWeatherIcon(const String &icon);
 
 private:
     U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2;
