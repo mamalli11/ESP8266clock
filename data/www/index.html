@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Smart Clock Control Panel</title>
+    <link href="bootstrap.min.css" rel="stylesheet" />
+    <link href="style.css" rel="stylesheet" />
+  </head>
+  <body>
+    <div class="container mt-5">
+      <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+          <h3 class="mb-0">Smart Clock Control Panel</h3>
+        </div>
+
+        <div class="card-body">
+          <ul class="nav nav-tabs mb-4" id="myTab" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button
+                class="nav-link active"
+                id="wifi-tab"
+                data-bs-toggle="tab"
+                data-bs-target="#wifi"
+                type="button"
+              >
+                WiFi
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button
+                class="nav-link"
+                id="time-tab"
+                data-bs-toggle="tab"
+                data-bs-target="#time"
+                type="button"
+              >
+                Time
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button
+                class="nav-link"
+                id="alarm-tab"
+                data-bs-toggle="tab"
+                data-bs-target="#alarm"
+                type="button"
+              >
+                Alarms
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button
+                class="nav-link"
+                id="display-tab"
+                data-bs-toggle="tab"
+                data-bs-target="#display"
+                type="button"
+              >
+                Display
+              </button>
+            </li>
+          </ul>
+
+          <div class="tab-content" id="myTabContent">
+            <!-- WiFi Settings Tab -->
+            <div class="tab-pane fade show active" id="wifi">
+              <form id="wifiForm" class="needs-validation" novalidate>
+                <div class="mb-3">
+                  <label class="form-label">SSID</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    name="ssid"
+                    required
+                  />
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Password</label>
+                  <input
+                    type="password"
+                    class="form-control"
+                    name="password"
+                    required
+                  />
+                </div>
+                <button type="submit" class="btn btn-primary">Save WiFi</button>
+              </form>
+            </div>
+
+            <!-- Time Settings Tab -->
+            <div class="tab-pane fade" id="time">
+              <form id="timeForm">
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label">City</label>
+                    <input type="text" class="form-control" name="city" />
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label">Country</label>
+                    <input type="text" class="form-control" name="country" />
+                  </div>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Time Format</label>
+                  <select class="form-select" name="timeFormat">
+                    <option value="24">24 Hour</option>
+                    <option value="12">12 Hour</option>
+                  </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Save Time</button>
+              </form>
+            </div>
+
+            <!-- Alarm Settings Tab -->
+            <div class="tab-pane fade" id="alarm">
+              <div class="mb-3">
+                <button
+                  class="btn btn-success btn-sm"
+                  onclick="addAlarmField()"
+                >
+                  Add Alarm
+                </button>
+              </div>
+              <form id="alarmForm">
+                <div id="alarmFields" class="mb-3"></div>
+                <button type="submit" class="btn btn-primary">
+                  Save Alarms
+                </button>
+              </form>
+            </div>
+
+            <!-- Display Settings Tab -->
+            <div class="tab-pane fade" id="display">
+              <form id="displayForm">
+                <div class="mb-3">
+                  <label class="form-label">Brightness</label>
+                  <input
+                    type="range"
+                    class="form-range"
+                    name="brightness"
+                    min="0"
+                    max="255"
+                  />
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Theme Color</label>
+                  <input
+                    type="color"
+                    class="form-control form-control-color"
+                    name="color"
+                    value="#0d6efd"
+                  />
+                </div>
+                <button type="submit" class="btn btn-primary">
+                  Save Display
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="bootstrap.bundle.min.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>
