@@ -1,3 +1,5 @@
+#include <ESP8266WebServer.h>
+
 #include "WebServerManager.h"
 
 WebServerManager::WebServerManager() : server(80), is24Hour(true), brightness(255), themeColor("#FFFFFF") {}
@@ -7,7 +9,9 @@ void WebServerManager::begin()
     LittleFS.begin(); // Initialize LittleFS
 
     // Serve static files
-    server.serveStatic("/", LittleFS, "/www/").setDefaultFile("index.html");
+    server.serveStatic("/", LittleFS, "/www/");
+    server.on("/", HTTP_GET, [this]()
+              { serveFile("/www/index.html", "text/html"); });
 
     // API Endpoints
     server.on("/", HTTP_GET, [this]()

@@ -10,6 +10,7 @@ class WeatherManager
 {
 public:
     WeatherManager(const String &city, const String &country);
+    void begin();
     bool update();
     String getDescription() const;
     float getTemperature() const;
