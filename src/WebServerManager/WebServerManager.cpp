@@ -1,3 +1,4 @@
+#include <EEPROM.h>
 #include <ESP8266WebServer.h>
 
 #include "WebServerManager.h"
