@@ -1,7 +1,7 @@
 #include <ESP8266WiFi.h>
 
 #include "PrayerTimesManager.h"
-#include "config.h"
+#include "Config.h"
 
 const String PrayerTimesManager::apiUrl = "https://prayer.aviny.com/api/prayertimes/311";
 
