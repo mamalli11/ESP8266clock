@@ -35,6 +35,7 @@ private:
     void handleSetTime();
     void handleSetAlarm();
     void handleSetDisplay();
+    void serveFile(const String &path, const String &contentType);
 };
 
 #endif

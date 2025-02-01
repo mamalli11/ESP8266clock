@@ -77,7 +77,9 @@ void NetworkManager::initWebServer()
     LittleFS.begin(); // Initialize LittleFS
 
     // Serve static files
-    server.serveStatic("/", LittleFS, "/www/").setDefaultFile("index.html");
+    server.serveStatic("/", LittleFS, "/www/");
+    server.on("/", HTTP_GET, [this]()
+              { this->serveFile("/www/index.html", "text/html"); });
 
     // API Endpoints
     server.on("/", HTTP_GET, [this]()
@@ -98,6 +100,20 @@ void NetworkManager::initWebServer()
               { handleSetDisplay(); });
 
     server.begin();
+}
+
+void NetworkManager::serveFile(const String &path, const String &contentType)
+{
+    File file = LittleFS.open(path, "r");
+    if (file)
+    {
+        server.streamFile(file, contentType);
+        file.close();
+    }
+    else
+    {
+        server.send(404, "text/plain", "File not found");
+    }
 }
 
 void NetworkManager::handleRoot()
