@@ -1,5 +1,5 @@
 #include "AlarmManager.h"
-#include "config.h"
+#include "Config.h"
 
 AlarmManager::AlarmManager()
 {
