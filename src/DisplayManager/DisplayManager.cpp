@@ -7,7 +7,6 @@ void DisplayManager::initialize()
 {
     u8g2.begin();
     u8g2.setFont(u8g2_font_6x10_tr);
-    u8g2.clearBuffer();
     u8g2.drawStr(0, 10, "Initializing...");
     u8g2.sendBuffer();
 }
