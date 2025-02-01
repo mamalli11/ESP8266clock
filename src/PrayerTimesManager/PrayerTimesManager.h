@@ -10,6 +10,7 @@ class PrayerTimesManager
 {
 public:
     PrayerTimesManager();
+    void begin();
     bool update();
     const String *getTimes() const;
     String getShamsiDate() const;

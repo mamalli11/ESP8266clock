@@ -1,3 +1,5 @@
+#include <ESP8266WiFi.h>
+
 #include "PrayerTimesManager.h"
 #include "config.h"
 
@@ -11,6 +13,11 @@ PrayerTimesManager::PrayerTimesManager()
         prayerTimes[i] = "--:--";
     }
     shamsiDate = "1403/01/01";
+}
+
+void PrayerTimesManager::begin()
+{
+    // مقداردهی اولیه (اگر نیاز است)
 }
 
 bool PrayerTimesManager::update()
