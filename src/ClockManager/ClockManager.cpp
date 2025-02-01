@@ -1,6 +1,6 @@
 #include <ESP8266WiFi.h>
 #include <time.h>
-#include "config.h"
+#include "Config.h"
 #include "ClockManager.h"
 
 ClockManager::ClockManager(DisplayManager &display, AlarmManager &alarm,
@@ -83,7 +83,7 @@ void ClockManager::updateDisplay()
             display.showClockPage(timeInfo, prayer.getShamsiDate());
             break;
         case 1:
-           display.showWeatherPage(weather.getDescription(), weather.getTemperature(), weather.getHumidity());
+            display.showWeatherPage(weather.getDescription(), weather.getTemperature(), weather.getHumidity());
             break;
         case 2:
             display.showPrayerTimesPage(prayer.getTimes());
