@@ -1,4 +1,5 @@
 #include "WeatherManager.h"
+#include <ESP8266WiFi.h>
 
 const String WeatherManager::apiUrl = "http://api.openweathermap.org/data/2.5/weather";
 const String WeatherManager::apiKey = "YOUR_API_KEY"; // کلید API خود را اینجا قرار دهید
@@ -6,8 +7,15 @@ const String WeatherManager::apiKey = "YOUR_API_KEY"; // کلید API خود ر�
 WeatherManager::WeatherManager(const String &city, const String &country)
     : city(city), country(country), description(""), temperature(0), humidity(0), weatherIcon("") {}
 
+void WeatherManager::begin()
+{
+}
+
 bool WeatherManager::update()
 {
+    HTTPClient http;
+    WiFiClient client;
+
     if (WiFi.status() != WL_CONNECTED)
     {
         return false;
@@ -15,8 +23,7 @@ bool WeatherManager::update()
 
     String url = apiUrl + "?q=" + city + "," + country + "&units=metric&appid=" + apiKey;
 
-    HTTPClient http;
-    http.begin(url);
+    http.begin(client, url);
     int httpCode = http.GET();
 
     if (httpCode == HTTP_CODE_OK)
