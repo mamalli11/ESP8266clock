@@ -12,6 +12,10 @@ public:
     void showClockPage(const tm *timeInfo, const String &shamsiDate);
     void showWeatherPage(const String &description, float temp, float humidity);
     void showPrayerTimesPage(const String times[6]);
+    void showMessage(const String &message, int duration = 2000);
+    void showErrorMessage(const String &error);
+    void clearDisplay();
+
     void adjustBrightness(int sensorValue);
     void drawWeatherIcon(const String &icon);
 
