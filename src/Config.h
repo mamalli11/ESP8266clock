@@ -2,12 +2,12 @@
 #define CONFIG_H
 
 // اعلام متغیرها با extern
-extern const char* DEFAULT_SSID;
-extern const char* DEFAULT_PASSWORD;
+extern const char *DEFAULT_SSID;
+extern const char *DEFAULT_PASSWORD;
 
 // API Keys
-extern const char* WEATHER_API_KEY;         // کلید API آب‌وهوا
-extern const char* PRAYER_TIMES_API_URL;    // آدرس API اوقات شرعی
+extern const char *WEATHER_API_KEY;      // کلید API آب‌وهوا
+extern const char *PRAYER_TIMES_API_URL; // آدرس API اوقات شرعی
 
 // پین‌ها و تنظیمات دیگر
 #define LED_PIN D5          // پین متصل به LED نئوپیکسل
@@ -19,6 +19,9 @@ extern const char* PRAYER_TIMES_API_URL;    // آدرس API اوقات شرعی
 #define DISPLAY_HEIGHT 64 // ارتفاع نمایشگر
 
 // Time Settings
-const int TIMEZONE_OFFSET = 12600;  // افست زمانی بر حسب ثانیه (برای تهران: 3:30 * 3600)
+const int TIMEZONE_OFFSET = 12600; // افست زمانی بر حسب ثانیه (برای تهران: 3:30 * 3600)
+
+#define EEPROM_SIZE 512
+#define MAX_ALARMS 15
 
 #endif
