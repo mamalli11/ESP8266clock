@@ -214,7 +214,7 @@ function showToast(message, type = "success") {
 }
 
 function toggle_showPassword() {
-  var x = document.getElementById("myInput");
+  var x = document.getElementById("Inputpassword");
   if (x.type === "password") {
     x.type = "text";
   } else {
