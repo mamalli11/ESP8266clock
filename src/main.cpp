@@ -1,6 +1,7 @@
+#include <time.h>
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
-#include <time.h>
+
 #include "Config.h"
 
 #include "./WebServerManager/WebServerManager.h"
@@ -15,37 +16,42 @@
 // تعریف اشیاء کامپوننت‌ها
 DisplayManager display;
 AlarmManager alarm;
+NetworkManager networkManager(display);
+WebServerManager webServer(alarm, networkManager);
 WeatherManager weather("Tehran", "IR");
 PrayerTimesManager prayer;
 LEDController leds;
-WebServerManager webServer;
+
+void clearEEPROM()
+{
+  EEPROM.begin(EEPROM_SIZE);
+  for (int i = 0; i < EEPROM_SIZE; i++)
+  {
+    EEPROM.write(i, 0);
+  }
+  EEPROM.commit();
+  EEPROM.end();
+  Serial.println("EEPROM cleared!");
+}
 
 void setup()
 {
   Serial.begin(9600);
-
-  // راه‌اندازی WiFi
-  WiFi.begin(DEFAULT_SSID, DEFAULT_PASSWORD);
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println("\nWiFi connected!");
-
-  // راه‌اندازی کامپوننت‌ها
   display.initialize();
-  alarm.begin();
-  weather.begin();
-  prayer.begin();
-  leds.initialize();
+
+  // بررسی مقداردهی اولیه EEPROM
+  if (networkManager.getSSID().isEmpty())
+  {
+    Serial.println("EEPROM is empty! Setting default values...");
+    networkManager.saveWiFiCredentials(DEFAULT_SSID, DEFAULT_PASSWORD);
+  }
+
+  // راه‌اندازی مدیریت شبکه
+  networkManager.begin();
   webServer.begin();
 
-  // تنظیمات اولیه وب سرور
-  webServer.setWiFiCredentials(DEFAULT_SSID, DEFAULT_PASSWORD);
-  webServer.setTimeSettings("Tehran", "IR", true);
-  webServer.setAlarmSettings("[{\"hour\":8,\"minute\":30,\"active\":true}]");
-  webServer.setDisplaySettings(128, "#0000FF");
+  // راه‌اندازی ماژول‌های دیگر
+  alarm.begin();
 
   // همگام‌سازی زمان با سرور NTP
   configTime(TIMEZONE_OFFSET, 0, "pool.ntp.org", "time.nist.gov");
@@ -66,10 +72,22 @@ void loop()
   alarm.checkAlarms(timeInfo);
   leds.update(timeInfo->tm_wday);
 
+  // مدیریت ارتباط شبکه و حالت AP
+  static unsigned long lastWiFiCheck = 0;
+  if (millis() - lastWiFiCheck > 10000)
+  {
+    if (!networkManager.isConnected())
+    {
+      Serial.println("⚠️ WiFi Lost! Switching to AP Mode...");
+      networkManager.begin(); // تلاش مجدد برای اتصال
+    }
+    lastWiFiCheck = millis();
+  }
+
   // به‌روزرسانی آب‌وهوا هر ساعت
   static unsigned long lastWeatherUpdate = 0;
   if (millis() - lastWeatherUpdate > 3600000)
-  { // 1 ساعت
+  {
     weather.update();
     lastWeatherUpdate = millis();
   }
@@ -77,7 +95,7 @@ void loop()
   // به‌روزرسانی اوقات شرعی هر 6 ساعت
   static unsigned long lastPrayerUpdate = 0;
   if (millis() - lastPrayerUpdate > 21600000)
-  { // 6 ساعت
+  {
     prayer.update();
     lastPrayerUpdate = millis();
   }
