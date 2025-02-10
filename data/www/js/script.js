@@ -104,9 +104,11 @@ function addAlarmField(
 // **ارسال تنظیمات WiFi**
 async function handleWifiSubmit(e) {
   e.preventDefault();
-  const formData = new URLSearchParams();
-  formData.append("ssid", e.target.ssid.value);
-  formData.append("password", e.target.password.value);
+
+  const formData = {
+    ssid: e.target.ssid.value,
+    password: e.target.password.value,
+  };
 
   try {
     await postData("/api/update/wifi", formData);
@@ -172,9 +174,11 @@ async function handleAlarmSubmit(e) {
 // **ارسال تنظیمات نمایشگر**
 async function handleDisplaySubmit(e) {
   e.preventDefault();
-  const formData = new URLSearchParams();
-  formData.append("brightness", e.target.brightness.value);
-  formData.append("theme", e.target.color.value);
+
+  const formData = {
+    brightness: e.target.brightness.value,
+    theme: e.target.color.value,
+  };
 
   try {
     await postData("/api/update/display", formData);
