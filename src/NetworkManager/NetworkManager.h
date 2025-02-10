@@ -5,36 +5,33 @@
 #include <ESP8266WebServer.h>
 #include <LittleFS.h>
 #include <ArduinoJson.h>
+#include "../DisplayManager/DisplayManager.h"
 
 class NetworkManager
 {
 public:
-    NetworkManager();
+    NetworkManager(DisplayManager &dispMgr);
     void begin();
     void handleClient();
     bool isConnected();
     String getLocalIP();
+    void saveWiFiCredentials(const String &ssid, const String &password);
+    String getSSID() const { return wifiSSID; }
+    String getPassword() const { return wifiPassword; }
 
 private:
     ESP8266WebServer server;
+    DisplayManager &displayManager;
     String wifiSSID;
     String wifiPassword;
-    String city;
-    String country;
-    bool is24Hour;
+    bool isAPMode;
 
-    void loadCredentials();
-    void saveCredentials();
+    void loadWiFiCredentials();
+    void saveWiFiCredentials();
     void startAPMode();
+    void connectToWiFi();
+    void checkWiFiConnection();
     void initWebServer();
-    void handleRoot();
-    void handleScan();
-    void handleSaveConfig();
-    void handleGetSettings();
-    void handleSetWifi();
-    void handleSetTime();
-    void handleSetAlarm();
-    void handleSetDisplay();
     void serveFile(const String &path, const String &contentType);
 };
 
