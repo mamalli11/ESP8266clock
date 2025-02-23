@@ -49,6 +49,7 @@ void setup()
   // راه‌اندازی مدیریت شبکه
   networkManager.begin();
   webServer.begin();
+  leds.initialize();
 
   // راه‌اندازی ماژول‌های دیگر
   alarm.begin();
