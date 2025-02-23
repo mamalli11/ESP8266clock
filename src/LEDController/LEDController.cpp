@@ -30,13 +30,13 @@ void LEDController::turnOff()
 uint32_t LEDController::getColorForDay(uint8_t day) const
 {
     const uint32_t colors[7] = {
-        pixels.Color(255, 0, 0),   // Sunday - Red
-        pixels.Color(0, 255, 0),   // Monday - Green
-        pixels.Color(0, 0, 255),   // Tuesday - Blue
-        pixels.Color(255, 255, 0), // Wednesday - Yellow
-        pixels.Color(255, 0, 255), // Thursday - Magenta
-        pixels.Color(0, 255, 255), // Friday - Cyan
-        pixels.Color(255, 165, 0)  // Saturday - Orange
+        pixels.Color(255, 215, 0),  // شنبه - Golden Yellow (#FFD700)
+        pixels.Color(70, 130, 180), // یکشنبه - Steel Blue (#4682B4)
+        pixels.Color(220, 20, 60),  // دوشنبه - Crimson Red (#DC143C)
+        pixels.Color(0, 128, 0),    // سه‌شنبه - Emerald Green (#008000)
+        pixels.Color(255, 140, 0),  // چهارشنبه - Dark Orange (#FF8C00)
+        pixels.Color(138, 43, 226), // پنج‌شنبه - Blue Violet (#8A2BE2)
+        pixels.Color(64, 224, 208)  // جمعه - Turquoise (#40E0D0)
     };
     return colors[day % 7];
 }
