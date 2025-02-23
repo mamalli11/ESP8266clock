@@ -10,9 +10,9 @@ extern const char *WEATHER_API_KEY;      // کلید API آب‌وهوا
 extern const char *PRAYER_TIMES_API_URL; // آدرس API اوقات شرعی
 
 // پین‌ها و تنظیمات دیگر
-#define LED_PIN D5          // پین متصل به LED نئوپیکسل
+#define LED_PIN D8          // پین متصل به LED نئوپیکسل
 #define BUZZER_PIN D7       // پین متصل به بوزر
-#define LIGHT_SENSOR_PIN D8 // پین متصل به سنسور نور
+#define LIGHT_SENSOR_PIN D5 // پین متصل به سنسور نور
 
 // Display Settings
 #define DISPLAY_WIDTH 128 // عرض نمایشگر
