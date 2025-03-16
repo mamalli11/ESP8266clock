@@ -11,16 +11,14 @@
 class ClockManager
 {
 public:
-    ClockManager(DisplayManager &display, AlarmManager &alarm, WeatherManager &weather, PrayerTimesManager &prayer, LEDController &leds);
+    ClockManager(DisplayManager &display, WeatherManager &weather, PrayerTimesManager &prayer);
     void begin();
     void update();
 
 private:
     DisplayManager &display;
-    AlarmManager &alarm;
     WeatherManager &weather;
     PrayerTimesManager &prayer;
-    LEDController &leds;
 
     time_t lastUpdateTime;
     time_t lastWeatherUpdate;
@@ -28,10 +26,8 @@ private:
 
     void syncTime();
     void updateDisplay();
-    void updateAlarms();
     void updateWeather();
     void updatePrayerTimes();
-    void updateLEDs();
 };
 
 #endif
