@@ -64,7 +64,7 @@ Alarm AlarmManager::getAlarm(uint8_t index) const
 
 void AlarmManager::saveAlarms()
 {
-    EEPROM.begin(EEPROM_SIZE);
+    // EEPROM.begin(EEPROM_SIZE);
     for (uint8_t i = 0; i < MAX_ALARMS; i++)
     {
         EEPROM.put(i * sizeof(Alarm), alarms[i]);
@@ -75,7 +75,7 @@ void AlarmManager::saveAlarms()
 
 void AlarmManager::loadAlarms()
 {
-    EEPROM.begin(EEPROM_SIZE);
+    // EEPROM.begin(EEPROM_SIZE);
     for (uint8_t i = 0; i < MAX_ALARMS; i++)
     {
         Alarm alarm;
