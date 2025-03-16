@@ -21,6 +21,7 @@ WebServerManager webServer(alarm, networkManager);
 WeatherManager weather("Tehran", "IR");
 PrayerTimesManager prayer;
 LEDController leds;
+ClockManager clockManager(display, weather, prayer);
 
 void clearEEPROM()
 {
@@ -37,22 +38,26 @@ void clearEEPROM()
 void setup()
 {
   Serial.begin(9600);
+  // clearEEPROM();
   display.initialize();
+  // EEPROM.begin(EEPROM_SIZE);
 
   // بررسی مقداردهی اولیه EEPROM
   if (networkManager.getSSID().isEmpty())
   {
-    Serial.println("EEPROM is empty! Setting default values...");
+    Serial.println("⚠️ EEPROM is empty! Setting default values...");
     networkManager.saveWiFiCredentials(DEFAULT_SSID, DEFAULT_PASSWORD);
   }
 
   // راه‌اندازی مدیریت شبکه
   networkManager.begin();
   webServer.begin();
-  leds.initialize();
 
   // راه‌اندازی ماژول‌های دیگر
   alarm.begin();
+  leds.initialize();
+  prayer.begin();
+  clockManager.begin();
 
   // همگام‌سازی زمان با سرور NTP
   configTime(TIMEZONE_OFFSET, 0, "pool.ntp.org", "time.nist.gov");
@@ -69,9 +74,9 @@ void loop()
   struct tm *timeInfo = localtime(&now);
 
   // به‌روزرسانی کامپوننت‌ها
-  display.showClockPage(timeInfo, prayer.getShamsiDate());
   alarm.checkAlarms(timeInfo);
   leds.update(timeInfo->tm_wday);
+  clockManager.update();
 
   // مدیریت ارتباط شبکه و حالت AP
   static unsigned long lastWiFiCheck = 0;
