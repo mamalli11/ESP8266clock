@@ -3,24 +3,14 @@
 #include "Config.h"
 #include "ClockManager.h"
 
-ClockManager::ClockManager(DisplayManager &display, AlarmManager &alarm,
-                           WeatherManager &weather, PrayerTimesManager &prayer,
-                           LEDController &leds)
-    : display(display), alarm(alarm), weather(weather),
-      prayer(prayer), leds(leds), lastUpdateTime(0),
+ClockManager::ClockManager(DisplayManager &display, WeatherManager &weather, PrayerTimesManager &prayer)
+    : display(display), weather(weather), prayer(prayer), lastUpdateTime(0),
       lastWeatherUpdate(0), lastPrayerUpdate(0) {}
 
 void ClockManager::begin()
 {
     // Initialize time synchronization
     syncTime();
-
-    // Initialize other components
-    display.initialize();
-    alarm.begin();
-    weather.begin();
-    prayer.begin();
-    leds.initialize();
 }
 
 void ClockManager::update()
@@ -32,22 +22,6 @@ void ClockManager::update()
     {
         lastUpdateTime = now;
         updateDisplay();
-        updateAlarms();
-        updateLEDs();
-    }
-
-    // Update weather every hour
-    if (now - lastWeatherUpdate >= 3600)
-    {
-        lastWeatherUpdate = now;
-        updateWeather();
-    }
-
-    // Update prayer times every 6 hours
-    if (now - lastPrayerUpdate >= 21600)
-    {
-        lastPrayerUpdate = now;
-        updatePrayerTimes();
     }
 }
 
@@ -65,59 +39,26 @@ void ClockManager::updateDisplay()
     time_t now = time(nullptr);
     struct tm *timeInfo = localtime(&now);
 
-    // Display clock page
-    display.showClockPage(timeInfo, prayer.getShamsiDate());
-
-    // Rotate between clock, weather, and prayer times
     static uint8_t displayState = 0;
     static time_t lastStateChange = 0;
 
-    if (now - lastStateChange >= 10)
-    { // Change state every 10 seconds
+    int displayDuration = (displayState == 0) ? 30 : 5; // 30s for clock, 5s for others
+
+    if (now - lastStateChange >= displayDuration)
+    {
         lastStateChange = now;
         displayState = (displayState + 1) % 3;
-
-        switch (displayState)
-        {
-        case 0:
-            display.showClockPage(timeInfo, prayer.getShamsiDate());
-            break;
-        case 1:
-            display.showWeatherPage(weather.getDescription(), weather.getTemperature(), weather.getHumidity());
-            break;
-        case 2:
-            display.showPrayerTimesPage(prayer.getTimes());
-            break;
-        }
     }
-}
-
-void ClockManager::updateAlarms()
-{
-    time_t now = time(nullptr);
-    struct tm *timeInfo = localtime(&now);
-    alarm.checkAlarms(timeInfo);
-}
-
-void ClockManager::updateWeather()
-{
-    if (WiFi.status() == WL_CONNECTED)
+    switch (displayState)
     {
-        weather.update();
+    case 0:
+        display.showClockPage(timeInfo, prayer.getShamsiDate());
+        break;
+    case 1:
+        display.showWeatherPage(weather.getDescription(), weather.getTemperature(), weather.getHumidity());
+        break;
+    case 2:
+        display.showPrayerTimesPage(prayer.getTimes());
+        break;
     }
-}
-
-void ClockManager::updatePrayerTimes()
-{
-    if (WiFi.status() == WL_CONNECTED)
-    {
-        prayer.update();
-    }
-}
-
-void ClockManager::updateLEDs()
-{
-    time_t now = time(nullptr);
-    struct tm *timeInfo = localtime(&now);
-    leds.update(timeInfo->tm_wday);
 }
