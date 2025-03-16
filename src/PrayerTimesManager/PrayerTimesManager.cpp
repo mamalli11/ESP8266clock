@@ -17,7 +17,7 @@ PrayerTimesManager::PrayerTimesManager()
 
 void PrayerTimesManager::begin()
 {
-    // مقداردهی اولیه (اگر نیاز است)
+    update();
 }
 
 bool PrayerTimesManager::update()
@@ -36,6 +36,7 @@ bool PrayerTimesManager::update()
 
     if (httpCode == HTTP_CODE_OK)
     {
+        Serial.println("✅ PrayerTimesManager updated successfully!");
         String payload = http.getString();
         return parsePrayerTimes(payload);
     }
@@ -50,18 +51,21 @@ bool PrayerTimesManager::parsePrayerTimes(const String &jsonResponse)
 
     if (error)
     {
+        Serial.println("❌ JSON parsing failed!");
         return false;
     }
 
-    // فرض کنید ساختار JSON به این شکل است:
-    // {"times": ["05:30", "06:45", "12:30", "16:15", "18:45", "20:00"], "date": "1403/07/15"}
-    JsonArray times = doc["times"];
-    for (int i = 0; i < 6; i++)
-    {
-        prayerTimes[i] = times[i].as<String>();
-    }
+    // استخراج زمان‌های نماز از JSON دریافتی
+    prayerTimes[0] = doc["Imsaak"].as<String>().substring(0, 5);   // اذان صبح
+    prayerTimes[1] = doc["Sunrise"].as<String>().substring(0, 5);  // طلوع آفتاب
+    prayerTimes[2] = doc["Noon"].as<String>().substring(0, 5);     // ظهر
+    prayerTimes[3] = doc["Sunset"].as<String>().substring(0, 5);   // غروب
+    prayerTimes[4] = doc["Maghreb"].as<String>().substring(0, 5);  // مغرب
+    prayerTimes[5] = doc["Midnight"].as<String>().substring(0, 5); // نیمه‌شب شرعی
 
-    shamsiDate = doc["date"].as<String>();
+    // استخراج تاریخ شمسی
+    shamsiDate = doc["Today"].as<String>();
+
     return true;
 }
 
@@ -72,5 +76,5 @@ const String *PrayerTimesManager::getTimes() const
 
 String PrayerTimesManager::getShamsiDate() const
 {
-    return shamsiDate;
+    return shamsiDate.substring(0, 10);
 }
