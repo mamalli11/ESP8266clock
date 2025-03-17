@@ -18,7 +18,7 @@ DisplayManager display;
 AlarmManager alarm;
 NetworkManager networkManager(display);
 WebServerManager webServer(alarm, networkManager);
-WeatherManager weather("Tehran", "IR");
+WeatherManager weather;
 PrayerTimesManager prayer;
 LEDController leds;
 ClockManager clockManager(display, weather, prayer);
@@ -53,18 +53,16 @@ void setup()
   networkManager.begin();
   webServer.begin();
 
-  // راه‌اندازی ماژول‌های دیگر
+  // راه‌اندازی سایر کامپوننت‌ها
   alarm.begin();
   leds.initialize();
   prayer.begin();
+  weather.begin();
   clockManager.begin();
 
-  // همگام‌سازی زمان با سرور NTP
-  configTime(TIMEZONE_OFFSET, 0, "pool.ntp.org", "time.nist.gov");
-  while (time(nullptr) < 100000)
-  {
-    delay(500);
-  }
+  digitalWrite(BUZZER_PIN, HIGH);
+  delay(1000);
+  digitalWrite(BUZZER_PIN, LOW);
 }
 
 void loop()
