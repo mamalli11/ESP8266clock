@@ -55,7 +55,7 @@ void ClockManager::updateDisplay()
         display.showClockPage(timeInfo, prayer.getShamsiDate());
         break;
     case 1:
-        display.showWeatherPage(weather.getDescription(), weather.getTemperature(), weather.getHumidity());
+        display.showWeatherPage(weather);
         break;
     case 2:
         display.showPrayerTimesPage(prayer.getTimes());
