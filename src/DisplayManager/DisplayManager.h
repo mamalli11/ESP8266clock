@@ -25,6 +25,7 @@ private:
     void drawDate(const String &date);
     void drawWeather(const WeatherManager &weather);
     void drawPrayerTimes(const String times[6]);
+    bool readIs24HourFromEEPROM();
 };
 
 #endif
