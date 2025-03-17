@@ -3,8 +3,6 @@
 #include "PrayerTimesManager.h"
 #include "Config.h"
 
-const String PrayerTimesManager::apiUrl = "https://prayer.aviny.com/api/prayertimes/311";
-
 PrayerTimesManager::PrayerTimesManager()
 {
     // مقداردهی اولیه
@@ -31,7 +29,7 @@ bool PrayerTimesManager::update()
     client.setInsecure(); // غیرفعال کردن بررسی SSL (موقت)
 
     HTTPClient http;
-    http.begin(client, apiUrl);
+    http.begin(client, PRAYER_TIMES_API_URL);
     int httpCode = http.GET();
 
     if (httpCode == HTTP_CODE_OK)
