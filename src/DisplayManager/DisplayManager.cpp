@@ -6,15 +6,24 @@ DisplayManager::DisplayManager() : u8g2(U8G2_R0, /* reset=*/U8X8_PIN_NONE) {}
 void DisplayManager::initialize()
 {
     u8g2.begin();
-    u8g2.setFont(u8g2_font_6x10_tr);
     showMessage("✅ Initializing...", 2000);
+}
+
+bool DisplayManager::readIs24HourFromEEPROM()
+{
+    EEPROM.begin(512);
+    bool is24Hour = false;
+    EEPROM.get(200, is24Hour);
+    EEPROM.end();
+    return is24Hour;
 }
 
 void DisplayManager::showClockPage(const tm *timeInfo, const String &shamsiDate)
 {
     u8g2.clearBuffer();
-    drawTime(timeInfo, true); // نمایش ۲۴ ساعته
-    drawDate(shamsiDate);
+    bool is24Hour = readIs24HourFromEEPROM(); // خواندن مقدار is24Hour از EEPROM
+    drawTime(timeInfo, is24Hour);
+    drawDate(shamsiDate); // نمایش تاریخ شمسی
     u8g2.sendBuffer();
 }
 
@@ -35,13 +44,13 @@ void DisplayManager::showPrayerTimesPage(const String times[6])
 void DisplayManager::showMessage(const String &message, int duration)
 {
     u8g2.clearBuffer();
-    u8g2.setFont(u8g2_font_6x10_tr);
+    u8g2.setFont(u8g2_font_6x13_mr);
 
     int y = 20;
     int lineHeight = 10;
 
     size_t start = 0;
-    while (start < message.length()) // اصلاح شده
+    while (start < message.length())
     {
         size_t end = message.indexOf('\n', start);
         if (end == -1)
@@ -79,26 +88,27 @@ void DisplayManager::drawTime(const tm *timeInfo, bool is24Hour)
     if (is24Hour)
     {
         strftime(timeStr, sizeof(timeStr), "%H:%M:%S", timeInfo);
+        u8g2.setFont(u8g2_font_logisoso24_tn);
+        u8g2.drawStr(10, 40, timeStr);
     }
     else
     {
-        strftime(timeStr, sizeof(timeStr), "%I:%M:%S %p", timeInfo);
+        strftime(timeStr, sizeof(timeStr), "%I:%M %p", timeInfo);
+        u8g2.setFont(u8g2_font_logisoso38_tn);
+        u8g2.drawStr(10, 40, timeStr);
     }
-
-    u8g2.setFont(u8g2_font_logisoso24_tn);
-    u8g2.drawStr(10, 40, timeStr);
 }
 
 void DisplayManager::drawDate(const String &date)
 {
-    u8g2.setFont(u8g2_font_6x10_tr);
-    u8g2.drawStr(15, 60, date.c_str());
+    u8g2.setFont(u8g2_font_crox2h_tf);
+    u8g2.drawStr(35, 60, date.c_str());
 }
 
 void DisplayManager::drawWeather(const WeatherManager &weather)
 {
     u8g2.clearBuffer();
-    u8g2.setFont(u8g2_font_6x10_tr);
+    u8g2.setFont(u8g2_font_6x12_tr);
 
     // نمایش توضیحات وضعیت آب‌وهوا
     u8g2.drawStr(5, 10, ("Weather: " + weather.getDescription()).c_str());
@@ -130,7 +140,7 @@ void DisplayManager::drawWeather(const WeatherManager &weather)
 
 void DisplayManager::drawPrayerTimes(const String times[6])
 {
-    u8g2.setFont(u8g2_font_6x10_tr);
+    u8g2.setFont(u8g2_font_6x12_tr);
 
     u8g2.drawStr(5, 10, ("Fajr: " + times[0]).c_str());
     u8g2.drawStr(5, 20, ("Sunrise: " + times[1]).c_str());
