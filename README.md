@@ -102,12 +102,13 @@ All user settings, including alarms, Wi-Fi credentials, and brightness preferenc
 ### 2️⃣ **Software Requirements:**
 
 - Arduino IDE with the following libraries installed:
-  - `ESP8266WiFi`
-  - `NTPClient`
-  - `Adafruit_GFX`
-  - `Adafruit_SSD1306`
-  - `Adafruit_NeoPixel`
-  - `ArduinoJson`
+  - `olikraus/U8g2@^2.36.2`
+  - `bblanchon/ArduinoJson@^7.2.0`
+  - `adafruit/Adafruit NeoPixel@^1.12.3`
+  - `adafruit/Adafruit Unified Sensor@^1.1.14`
+  - `arduino-libraries/ArduinoHttpClient@^0.6.1`
+  - `rweather/Crypto@^0.4.0`
+  - `espressif8266`
   - `LittleFS`
 
 ### 3️⃣ **Steps:**
