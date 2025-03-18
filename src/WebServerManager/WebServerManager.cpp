@@ -69,14 +69,16 @@ void WebServerManager::initWebRoutes()
     // ذخیره تنظیمات WiFi
     server.on("/api/update/wifi", HTTP_POST, [this]()
               {
-        // Serial.println(server.hasArg());
-        // Serial.println(server.hasArg("password"));
+
 
         if (!server.hasArg("ssid") || !server.hasArg("password"))
         {
             server.send(400, "text/plain", "Missing parameters");
             return;
         }
+        
+        Serial.println(server.arg("ssid"));
+        Serial.println(server.arg("password"));
 
         networkManager.saveWiFiCredentials(server.arg("ssid"), server.arg("password"));
         server.send(200, "text/plain", "WiFi Updated. Restarting...");
