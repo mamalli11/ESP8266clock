@@ -10,7 +10,7 @@ NetworkManager::NetworkManager(DisplayManager &dispMgr) : server(80), displayMan
 void NetworkManager::begin()
 {
     displayManager.showMessage("🔄 Initializing WiFi...", 2000);
-    // loadWiFiCredentials();
+    loadWiFiCredentials();
 
     if (wifiSSID.isEmpty())
     {
@@ -40,22 +40,29 @@ String NetworkManager::getLocalIP()
 
 void NetworkManager::loadWiFiCredentials()
 {
-    EEPROM.begin(512);
+    Serial.println("📥 Loading WiFi credentials from EEPROM...");
 
-    char ssid[32] = {0}, password[64] = {0};
-    EEPROM.get(0, ssid);
-    EEPROM.get(32, password);
+    EEPROM.begin(EEPROM_SIZE);
 
-    wifiSSID = String(ssid);
-    wifiPassword = String(password);
+    char ssidBuf[32] = {0}, passBuf[64] = {0};
+    EEPROM.get(0, ssidBuf);
+    EEPROM.get(32, passBuf);
 
+    wifiSSID = String(ssidBuf);
+    wifiPassword = String(passBuf);
     EEPROM.end();
 
-    Serial.println("🔹 WiFi credentials loaded from EEPROM.");
+    Serial.println("📥 Loading WiFi credentials from EEPROM...");
+    Serial.print("🔍 Loaded SSID: ");
+    Serial.println(wifiSSID);
+    Serial.print("🔍 Loaded Password: ");
+    Serial.println(wifiPassword);
 }
 
 void NetworkManager::saveWiFiCredentials(const String &ssid, const String &password)
 {
+
+    EEPROM.begin(EEPROM_SIZE); // اطمینان از مقداردهی EEPROM
 
     char ssidBuf[32] = {0}, passBuf[64] = {0};
     strncpy(ssidBuf, ssid.c_str(), sizeof(ssidBuf) - 1);
@@ -64,14 +71,19 @@ void NetworkManager::saveWiFiCredentials(const String &ssid, const String &passw
     EEPROM.put(0, ssidBuf);
     EEPROM.put(32, passBuf);
     EEPROM.commit();
+    delay(100); // ✅ تأخیر برای اطمینان از ذخیره شدن در EEPROM
     EEPROM.end();
 
     wifiSSID = ssid;
     wifiPassword = password;
 
-    Serial.println(ssid);
-    Serial.println(password);
-    Serial.println("✅ WiFi credentials saved to EEPROM.");
+    Serial.println("✅ Checking saved values...");
+    char testSSID[32] = {0}, testPass[64] = {0};
+    EEPROM.get(0, testSSID);
+    EEPROM.get(32, testPass);
+
+    Serial.printf("🔍 Saved SSID: %s\n", testSSID);
+    Serial.printf("🔍 Saved Password: %s\n", testPass);
 }
 
 void NetworkManager::connectToWiFi()
