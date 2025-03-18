@@ -105,13 +105,16 @@ function addAlarmField(
 async function handleWifiSubmit(e) {
   e.preventDefault();
 
-  const formData = {
-    ssid: e.target.ssid.value,
-    password: e.target.password.value,
-  };
+  const formData = new URLSearchParams();
+  formData.append("ssid", e.target.ssid.value);
+  formData.append("password", e.target.password.value);
 
   try {
-    await postData("/api/update/wifi", formData);
+    await fetch("/api/update/wifi", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: formData.toString(),
+    });
     showToast("WiFi settings saved! Restarting...", "success");
   } catch (error) {
     showToast("Error saving WiFi!", "danger");
