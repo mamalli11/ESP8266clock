@@ -45,12 +45,11 @@ The clock includes an ambient light sensor to adjust the OLED brightness automat
 
 ---
 
-### ⏳ **Alarms and Countdown Timer**
+### ⏳ **Alarms Timer**
 
-The clock supports multiple alarms and a countdown timer, all configurable via the web interface:
+The clock supports multiple alarms, all configurable via the web interface:
 
 - **Alarms:** Set daily alarms with customizable times.
-- **Countdown Timer:** Perfect for reminders or time-sensitive tasks.
 
 The alarms and timers are saved to persistent memory, ensuring settings remain intact even after power loss.
 
@@ -73,23 +72,11 @@ Weather data is updated periodically whenever the device connects to the interne
 A user-friendly web interface allows you to:
 
 - Configure Wi-Fi credentials.
-- Set alarms and timers.
+- Set alarms.
 - Adjust display brightness and other settings.
 - Enable or disable specific features.
 
 Simply connect to the clock's IP address to access the control panel from any browser.
-
----
-
-### 🎬 **Interactive Animations**
-
-The OLED display includes smooth and visually appealing animations for:
-
-- **Switching between time and date.**
-- **Transitioning to weather updates.**
-- **Alarm notifications.**
-
-These animations enhance the user experience and bring the clock to life.
 
 ---
 
@@ -125,10 +112,11 @@ All user settings, including alarms, Wi-Fi credentials, and brightness preferenc
 
 ### 3️⃣ **Steps:**
 
-1. Connect your hardware components as per the wiring diagram.
-2. Edit the code to include your Wi-Fi credentials and preferred settings.
-3. Upload the code to your ESP8266 using Arduino IDE.
-4. Access the web interface to personalize your clock settings.
+1. Rename the `Config.Example.cpp` file to `Config.cpp` and enter the requested values.
+2. Connect your hardware components as per the wiring diagram.
+3. Edit the code to include your Wi-Fi credentials and preferred settings.
+4. Upload the code to your ESP8266 using Arduino IDE.
+5. Access the web interface to personalize your clock settings.
 
 ---
 
