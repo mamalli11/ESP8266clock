@@ -10,7 +10,7 @@ PrayerTimesManager::PrayerTimesManager()
     {
         prayerTimes[i] = "--:--";
     }
-    shamsiDate = "1403/01/01";
+    shamsiDate = "1404/01/01";
 }
 
 void PrayerTimesManager::begin()
@@ -62,7 +62,17 @@ bool PrayerTimesManager::parsePrayerTimes(const String &jsonResponse)
     prayerTimes[5] = doc["Midnight"].as<String>().substring(0, 5); // نیمه‌شب شرعی
 
     // استخراج تاریخ شمسی
-    shamsiDate = doc["Today"].as<String>();
+    String todayStr = doc["Today"].as<String>();
+    int dashIndex = todayStr.indexOf(" - "); // موقعیت اولین " - " در رشته
+
+    if (dashIndex != -1)
+    {
+        shamsiDate = todayStr.substring(0, dashIndex); // استخراج فقط بخش تاریخ
+    }
+    else
+    {
+        shamsiDate = todayStr; // اگر "-" نبود، کل مقدار را در نظر بگیر
+    }
 
     return true;
 }
