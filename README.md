@@ -113,7 +113,7 @@ All user settings, including alarms, Wi-Fi credentials, and brightness preferenc
 
 ### 3️⃣ **Steps:**
 
-1. Rename the `Config.Example.cpp` file to `Config.cpp` and enter the requested values.
+1. Rename the `Config.Example.txt` file to `Config.cpp` and enter the requested values.
 2. Connect your hardware components as per the wiring diagram.
 3. Edit the code to include your Wi-Fi credentials and preferred settings.
 4. Upload the code to your ESP8266 using Arduino IDE.
