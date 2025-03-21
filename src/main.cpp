@@ -42,6 +42,8 @@ void setup()
   display.initialize();
   // EEPROM.begin(EEPROM_SIZE);
 
+  pinMode(BUZZER_PIN, OUTPUT);
+
   // بررسی مقداردهی اولیه EEPROM
   if (networkManager.getSSID().isEmpty())
   {
@@ -60,9 +62,9 @@ void setup()
   weather.begin();
   clockManager.begin();
 
-  digitalWrite(BUZZER_PIN, HIGH);
+  tone(BUZZER_PIN, 1000);
   delay(1000);
-  digitalWrite(BUZZER_PIN, LOW);
+  noTone(BUZZER_PIN);
 }
 
 void loop()
