@@ -106,7 +106,18 @@ void AlarmManager::triggerAlarm(const Alarm &alarm)
     Serial.print("Alarm Triggered: ");
     Serial.println(alarm.name);
 
-    digitalWrite(BUZZER_PIN, HIGH);
-    delay(1000);
-    digitalWrite(BUZZER_PIN, LOW);
+    unsigned long startTime = millis();
+    while (millis() - startTime < 30000)
+    { // اجرای حلقه به مدت ۳۰ ثانیه
+        tone(BUZZER_PIN, 1000);
+        delay(200);
+        tone(BUZZER_PIN, 1200);
+        delay(200);
+        tone(BUZZER_PIN, 800);
+        delay(200);
+        noTone(BUZZER_PIN);
+        delay(100); // توقف کوتاه برای تنوع در صدا
+    }
+
+    noTone(BUZZER_PIN); // اطمینان از خاموش شدن بازر
 }
