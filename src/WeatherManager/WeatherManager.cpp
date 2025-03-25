@@ -131,18 +131,25 @@ const uint8_t *WeatherManager::mapIconToBitmap(const char *icon)
         const char *code;
         const uint8_t *bitmap;
     } iconMap[] = {
-        {"01d", sun_bitmap},
-        {"01n", moon_bitmap},
-        {"02d", cloud_sun_bitmap},
-        {"02n", cloud_moon_bitmap},
-        {"03", cloud_bitmap},       // برای تمام ورژن‌های 03xx
-        {"04", cloud_dense_bitmap}, // برای تمام ورژن‌های 04xx
-        {"09", rain_bitmap},
-        {"10d", drizzle_bitmap},
-        {"10n", drizzle_night_bitmap},
-        {"11", storm_bitmap},
-        {"13", snow_bitmap},
-        {"50", fog_bitmap}};
+        {"01d", sun_bitmap},            // آفتابی روز
+        {"01n", moon_bitmap},           // آفتابی شب
+        {"02d", cloud_sun_bitmap},      // نیمه ابری روز
+        {"02n", cloud_moon_bitmap},     // نیمه ابری شب
+        {"03d", cloud_d_bitmap},        // ابری پراکنده روز
+        {"03n", cloud_n_bitmap},        // ابری پراکنده شب
+        {"04d", cloud_dense_d_bitmap},  // ابری سنگین روز
+        {"04n", cloud_dense_n_bitmap},  // ابری سنگین شب
+        {"09d", rain_d_bitmap},         // بارش پراکنده روز
+        {"09n", rain_n_bitmap},         // بارش پراکنده شب
+        {"10d", drizzle_d_bitmap},      // باران روز
+        {"10n", drizzle_n_bitmap},      // باران شب
+        {"11d", thunderstorm_d_bitmap}, // رعد و برق روز
+        {"11n", thunderstorm_n_bitmap}, // رعد و برق شب
+        {"13d", snow_d_bitmap},         // برف روز
+        {"13n", snow_n_bitmap},         // برف شب
+        {"50d", fog_d_bitmap},          // مه روز
+        {"50n", fog_n_bitmap}           // مه شب
+    };
 
     // جستجوی آیکون
     for (const auto &pair : iconMap)
@@ -153,5 +160,5 @@ const uint8_t *WeatherManager::mapIconToBitmap(const char *icon)
         }
     }
 
-    return unknown_bitmap;
+    return unknown_bitmap; // آیکون نامشخص
 }
