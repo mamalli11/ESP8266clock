@@ -63,8 +63,13 @@ void setup()
   clockManager.begin();
 
   tone(BUZZER_PIN, 1000);
-  delay(1000);
+  delay(200);
+  tone(BUZZER_PIN, 1200);
+  delay(200);
+  tone(BUZZER_PIN, 800);
+  delay(200);
   noTone(BUZZER_PIN);
+  delay(100);
 }
 
 void loop()
