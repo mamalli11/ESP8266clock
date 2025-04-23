@@ -42,7 +42,7 @@ void ClockManager::updateDisplay()
     static uint8_t displayState = 0;
     static time_t lastStateChange = 0;
 
-    int displayDuration = (displayState == 0) ? 30 : 5; // 30s for clock, 5s for others
+    int displayDuration = (displayState == 0) ? 55 : 5; // 30s for clock, 5s for others
 
     if (now - lastStateChange >= displayDuration)
     {
