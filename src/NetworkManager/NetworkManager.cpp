@@ -1,3 +1,4 @@
+// NetworkManager.cpp
 #include <EEPROM.h>
 #include <ESP8266WiFi.h>
 
@@ -5,7 +6,13 @@
 #include "../WebServerManager/WebServerManager.h"
 #include "../DisplayManager/DisplayManager.h"
 
-NetworkManager::NetworkManager(DisplayManager &dispMgr) : server(80), displayManager(dispMgr), isAPMode(false) {}
+NetworkManager::NetworkManager(DisplayManager &dispMgr) : server(80),
+                                                          displayManager(dispMgr),
+                                                          isAPMode(false),
+                                                          wasEverConnected(false),
+                                                          lastConnectionAttempt(0),
+                                                          nextRetryDelay(0),
+                                                          currentRetryStep(0) {}
 
 void NetworkManager::begin()
 {
@@ -61,8 +68,7 @@ void NetworkManager::loadWiFiCredentials()
 
 void NetworkManager::saveWiFiCredentials(const String &ssid, const String &password)
 {
-
-    EEPROM.begin(EEPROM_SIZE); // اطمینان از مقداردهی EEPROM
+    EEPROM.begin(EEPROM_SIZE);
 
     char ssidBuf[32] = {0}, passBuf[64] = {0};
     strncpy(ssidBuf, ssid.c_str(), sizeof(ssidBuf) - 1);
@@ -71,7 +77,7 @@ void NetworkManager::saveWiFiCredentials(const String &ssid, const String &passw
     EEPROM.put(0, ssidBuf);
     EEPROM.put(32, passBuf);
     EEPROM.commit();
-    delay(100); // ✅ تأخیر برای اطمینان از ذخیره شدن در EEPROM
+    delay(100);
     EEPROM.end();
 
     wifiSSID = ssid;
@@ -103,12 +109,17 @@ void NetworkManager::connectToWiFi()
 
     if (WiFi.status() != WL_CONNECTED)
     {
-        Serial.println("❌ Failed to connect to WiFi. Switching to AP mode...");
-        displayManager.showMessage("❌ WiFi Failed!\n\nStarting AP Mode", 3000);
-        startAPMode();
+        Serial.println("❌ Failed to connect to WiFi.");
+        if (!wasEverConnected)
+        {
+            displayManager.showMessage("❌ WiFi Failed!\n\nStarting AP Mode", 3000);
+            startAPMode();
+        }
     }
     else
     {
+        wasEverConnected = true;
+        currentRetryStep = 0;
         Serial.print("✅ Connected to WiFi! IP Address: ");
         Serial.println(WiFi.localIP());
         displayManager.showMessage("✅ Connected!\n\nIP: " + WiFi.localIP().toString(), 3000);
@@ -130,24 +141,60 @@ void NetworkManager::startAPMode()
 
 void NetworkManager::checkWiFiConnection()
 {
-    if (!isAPMode && WiFi.status() != WL_CONNECTED)
+    static bool lastConnectionState = isConnected(); // وضعیت قبلی اتصال را ذخیره می‌کند
+
+    bool currentConnectionState = isConnected();
+
+    // اگر وضعیت اتصال تغییر کرده باشد
+    if (currentConnectionState != lastConnectionState)
     {
-        Serial.println("⚠️ WiFi Disconnected! Trying to reconnect...");
-        displayManager.showMessage("⚠️ WiFi Lost!\n\nReconnecting...", 2000);
-
-        WiFi.reconnect();
-        delay(5000); // منتظر بماند تا دوباره متصل شود
-
-        if (WiFi.status() != WL_CONNECTED)
+        if (currentConnectionState)
         {
-            Serial.println("❌ Reconnection Failed! Switching to AP Mode...");
-            displayManager.showMessage("❌ WiFi Failed!\n\nStarting AP Mode", 3000);
-            startAPMode();
+            // اتصال برقرار شده
+            wasEverConnected = true;
+            currentRetryStep = 0;
+            Serial.println("\n✅ WiFi Connected!");
+            Serial.print("IP Address: ");
+            Serial.println(WiFi.localIP());
+            displayManager.showMessage("✅ WiFi Connected!\nIP: " + WiFi.localIP().toString(), 3000);
         }
         else
         {
-            Serial.println("✅ Reconnected to WiFi!");
-            displayManager.showMessage("✅ Reconnected!\n\nIP: " + WiFi.localIP().toString(), 3000);
+            // اتصال قطع شده
+            Serial.println("\n⚠️  WiFi Disconnected!");
+            lastConnectionAttempt = millis();   // زمان قطع شدن را ذخیره می‌کند
+            nextRetryDelay = retryIntervals[0]; // بازنشانی به اولین پله
+            currentRetryStep = 0;
+        }
+        lastConnectionState = currentConnectionState;
+    }
+
+    // اگر در حالت AP نیستیم و اتصال قطع است
+    if (!isAPMode && !currentConnectionState)
+    {
+        unsigned long currentTime = millis();
+
+        if (currentTime - lastConnectionAttempt >= nextRetryDelay)
+        {
+            Serial.println("🔄 Attempting to reconnect...");
+
+            WiFi.reconnect();
+            lastConnectionAttempt = currentTime;
+
+            // محاسبه زمان تلاش بعدی
+            if (currentRetryStep < 7)
+            {
+                nextRetryDelay = retryIntervals[currentRetryStep];
+                currentRetryStep++;
+            }
+            else
+            {
+                nextRetryDelay = retryIntervals[7]; // 48 ساعت
+            }
+
+            Serial.print("⏱ Next attempt in: ");
+            Serial.print(nextRetryDelay / 1000);
+            Serial.println(" seconds");
         }
     }
 }
