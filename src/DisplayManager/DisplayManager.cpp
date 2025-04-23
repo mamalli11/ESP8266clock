@@ -94,8 +94,8 @@ void DisplayManager::drawTime(const tm *timeInfo, bool is24Hour)
     else
     {
         strftime(timeStr, sizeof(timeStr), "%I:%M %p", timeInfo);
-        u8g2.setFont(u8g2_font_logisoso38_tn);
-        u8g2.drawStr(10, 40, timeStr);
+        u8g2.setFont(u8g2_font_logisoso42_tn);
+        u8g2.drawStr(0, 40, timeStr);
     }
 }
 
