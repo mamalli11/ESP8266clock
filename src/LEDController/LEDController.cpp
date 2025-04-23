@@ -11,7 +11,7 @@ void LEDController::initialize()
 void LEDController::update(uint8_t dayOfWeek)
 {
     uint32_t color = getColorForDay(dayOfWeek);
-    pixels.setBrightness(13);
+    pixels.setBrightness(3);
     pixels.setPixelColor(0, dimColor(color, 0.1f)); // Dim the color for better visibility
     pixels.show();
 }
