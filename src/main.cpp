@@ -83,29 +83,25 @@ void loop()
   leds.update(timeInfo->tm_wday);
   clockManager.update();
 
-  // مدیریت ارتباط شبکه و حالت AP
+  // مدیریت ارتباط شبکه
   static unsigned long lastWiFiCheck = 0;
   if (millis() - lastWiFiCheck > 10000)
   {
-    if (!networkManager.isConnected())
-    {
-      Serial.println("⚠️ WiFi Lost! Switching to AP Mode...");
-      networkManager.begin(); // تلاش مجدد برای اتصال
-    }
+    networkManager.checkWiFiConnection();
     lastWiFiCheck = millis();
   }
 
-  // به‌روزرسانی آب‌وهوا هر ساعت
+  // به‌روزرسانی آب‌وهوا هر ساعت (فقط اگر متصل باشیم)
   static unsigned long lastWeatherUpdate = 0;
-  if (millis() - lastWeatherUpdate > 3600000)
+  if (millis() - lastWeatherUpdate > 3600000 && networkManager.isConnected())
   {
     weather.update();
     lastWeatherUpdate = millis();
   }
 
-  // به‌روزرسانی اوقات شرعی هر 6 ساعت
+  // به‌روزرسانی اوقات شرعی هر 6 ساعت (فقط اگر متصل باشیم)
   static unsigned long lastPrayerUpdate = 0;
-  if (millis() - lastPrayerUpdate > 21600000)
+  if (millis() - lastPrayerUpdate > 21600000 && networkManager.isConnected())
   {
     prayer.update();
     lastPrayerUpdate = millis();
